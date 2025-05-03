@@ -1,0 +1,58 @@
+package org.treef.model.ziplist;
+
+import org.treef.utils.adt.Either;
+import org.treef.utils.adt.Maybe;
+
+public class ZipListInc<a, b> {
+    public ZipList<a> left;
+    public ZipListStrict<b> right;
+
+    public ZipListInc(ZipList<a> left) {
+        this.left = left;
+        this.right = new ZipListStrict<>();
+    }
+
+    public Maybe<Either<a, b>> extract() {
+        switch (this.left.extract()) {
+            case Maybe.Nothing() -> { return new Maybe.Nothing<>(); }
+            case Maybe.Just(a l) -> {
+                if (l == null) return new Maybe.Just<>(new Either.Right<>(this.right.extract().fromJust()));
+                return new Maybe.Just<>(new Either.Left<>(l));
+            }
+        }
+    };
+
+    public boolean next() {
+        if (this.left.next()) {
+            if (!this.right.next()) this.right.insertR(null);
+            return true;
+        } else return false;
+    }
+
+    public boolean prev() {
+        return this.left.prev() && this.right.prev();
+    }
+
+    public boolean setCurrent(b b) {
+        switch (this.left.extract()) {
+            case Maybe.Nothing() -> { return false; }
+            case Maybe.Just(a v) -> {
+                this.left.setCurrent(null);
+                switch (this.right.extract()) {
+                    case Maybe.Nothing() -> { this.right.insertR(b); return true; }
+                    case Maybe.Just(b v1) -> {
+                        v1 = b;
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    public void show() {
+        System.out.println("left");
+        this.left.show();
+        System.out.println("right");
+        this.right.show();
+    }
+}

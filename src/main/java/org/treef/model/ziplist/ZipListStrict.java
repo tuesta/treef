@@ -9,20 +9,17 @@ public class ZipListStrict<a> implements ZipList<a>{
         return this.mNode;
     }
 
+    @Override
     public void setCurrent(a a) {
-        this.mNode.withJust(node -> {
-            node.setCurrent(a);
-            return null;
-        });
+        switch (this.mNode) {
+            case Maybe.Nothing() -> {}
+            case Maybe.Just(NodeLinkList<a> node) -> { node.setCurrent(a); }
+        }
     }
 
-    public ZipListStrict(Maybe<NodeLinkList<a>> mNode) {
-        this.mNode = mNode;
-    }
+    public ZipListStrict(Maybe<NodeLinkList<a>> mNode) { this.mNode = mNode; }
 
-    public ZipListStrict() {
-        this.mNode = new Maybe.Nothing<>();
-    }
+    public ZipListStrict() { this.mNode = new Maybe.Nothing<>(); }
 
     @Override
     public Maybe<a> extract() {
@@ -33,8 +30,8 @@ public class ZipListStrict<a> implements ZipList<a>{
     }
 
     @Override
-    public ZipList<a> empty() {
-        return new ZipListStrict<a>();
+    public <x> ZipList<x> empty() {
+        return new ZipListStrict<>();
     }
 
     public boolean hasNext() {
@@ -49,40 +46,54 @@ public class ZipListStrict<a> implements ZipList<a>{
     }
 
     @Override
-    public void next() {
-        this.mNode.withJust(node -> {
-            node.getAfter().mNode.withJust(nodeAfter -> {
-                var currentNode = new Maybe.Just<NodeLinkList<a>>(new NodeLinkList<a>(node.getBefore(), node.getCurrent(), this));
-                var currentList = new ZipListStrict<>(currentNode);
-                nodeAfter.setBefore(currentList);
-                this.mNode = node.getAfter().mNode;
-                return null;
-            });
-            return null;
-        });
+    public boolean next() {
+        switch (this.mNode) {
+            case Maybe.Nothing() -> { return false; }
+            case Maybe.Just(NodeLinkList<a> node) -> {
+                switch (node.getAfter().mNode) {
+                    case Maybe.Nothing() -> { return false; }
+                    case Maybe.Just(NodeLinkList<a> nodeAfter) -> {
+                        var currentNode = new Maybe.Just<NodeLinkList<a>>(new NodeLinkList<a>(node.getBefore(), node.getCurrent(), this));
+                        var currentList = new ZipListStrict<>(currentNode);
+                        nodeAfter.setBefore(currentList);
+                        this.mNode = node.getAfter().mNode;
+                        return true;
+                    }
+                }
+            }
+        }
     }
 
     @Override
-    public void prev() {
-        this.mNode.withJust(node -> {
-            node.getBefore().mNode.withJust(nodeBefore -> {
-                var currentNode = new Maybe.Just<>(new NodeLinkList<a>(this, node.getCurrent(), node.getAfter()));
-                var currentList = new ZipListStrict<>(currentNode);
-                nodeBefore.setAfter(currentList);
-                this.mNode = node.getBefore().mNode;
-                return null;
-            });
-            return null;
-        });
+    public boolean prev() {
+        switch (this.mNode) {
+            case Maybe.Nothing() -> { return false; }
+            case Maybe.Just(NodeLinkList<a> node) -> {
+                switch (node.getBefore().mNode) {
+                    case Maybe.Nothing() -> { return false; }
+                    case Maybe.Just(NodeLinkList<a> nodeBefore) -> {
+                        var currentNode = new Maybe.Just<>(new NodeLinkList<a>(this, node.getCurrent(), node.getAfter()));
+                        var currentList = new ZipListStrict<>(currentNode);
+                        nodeBefore.setAfter(currentList);
+                        this.mNode = node.getBefore().mNode;
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    private Maybe<NodeLinkList<a>> singletonNode(a val) {
+        return new Maybe.Just<>(new NodeLinkList<>(new ZipListStrict<>(), val, new ZipListStrict<>()));
     }
 
     public void insertR(a val) {
         switch (this.mNode) {
             case Maybe.Nothing() -> {
-                this.mNode = new Maybe.Just<>(new NodeLinkList<a>(new ZipListStrict<a>(), val, new ZipListStrict<>()));
+                this.mNode = singletonNode(val);
             }
             case Maybe.Just(NodeLinkList<a> node) -> {
-                var currentNode = new Maybe.Just<>(new NodeLinkList<a>(node.getBefore(), node.getCurrent(), this));
+                var currentNode = new Maybe.Just<>(new NodeLinkList<>(node.getBefore(), node.getCurrent(), this));
                 var currentList = new ZipListStrict<>(currentNode);
 
                 node.setCurrent(val);
@@ -91,6 +102,22 @@ public class ZipListStrict<a> implements ZipList<a>{
         };
     }
 
+    public void insertL(a val) {
+        switch (this.mNode) {
+            case Maybe.Nothing() -> {
+                this.mNode = singletonNode(val);
+            }
+            case Maybe.Just(NodeLinkList<a> node) -> {
+                var currentNode = new Maybe.Just<>(new NodeLinkList<>(this, val, node.getAfter()));
+                var currenList = new ZipListStrict<>(currentNode);
+
+                node.setCurrent(val);
+                node.setAfter(currenList);
+            }
+        }
+    }
+
+    @Override
     public void show() {
         switch (this.mNode) {
             case Maybe.Nothing() -> { System.out.println("--"); }

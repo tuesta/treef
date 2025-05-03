@@ -1,34 +1,36 @@
 package org.treef.model.ziplist;
 
 import org.treef.utils.adt.Maybe;
+import org.treef.utils.Mut;
+import org.treef.utils.adt.T;
 
 import java.util.function.Function;
 
 public class ZipListLazy<b, a> implements ZipList<a> {
     private Maybe<b> state;
-    private final ZipListStrict<a> zipListStrict;
-    private final Function<b, Maybe<a>> generate;
+    private final ZipListStrict<a> memo;
+    private final Function<b, Maybe<T<a, b>>> generate;
 
-    public ZipListLazy(b state, Function<b, Maybe<a>> generate) {
+    public ZipListLazy(b state, Function<b, Maybe<T<a, b>>> generate) {
         this.state = new Maybe.Just<>(state);
         this.generate = generate;
-        this.zipListStrict = new ZipListStrict<>();
+        this.memo = new ZipListStrict<>();
     }
 
     public ZipListLazy() {
         this.state = new Maybe.Nothing<>();
         this.generate = null;
-        this.zipListStrict = new ZipListStrict<>();
+        this.memo = new ZipListStrict<>();
 
     }
 
     @Override
-    public ZipList<a> empty() {
+    public <x> ZipList<x> empty() {
         return new ZipListLazy<>();
     }
 
     public Maybe<a> extract() {
-        switch (this.zipListStrict.extract()) {
+        switch (this.memo.extract()) {
             case Maybe.Just<a> v -> { return v; }
             case Maybe.Nothing<a>() -> {
                 if (this.state instanceof Maybe.Nothing) return new Maybe.Nothing<>();
@@ -38,23 +40,44 @@ public class ZipListLazy<b, a> implements ZipList<a> {
         }
     }
 
-    public void next() {
-        state.withJust(b -> {
-            if (zipListStrict.hasNext()) zipListStrict.next();
-            else {
-                switch (this.generate.apply(b)) {
-                    case Maybe.Nothing() -> this.state = new Maybe.Nothing<>();
-                    case Maybe.Just(a a) -> this.zipListStrict.insertR(a);
-                }
-            }
-            return null;
-        });
+    @Override
+    public void setCurrent(a newCurrent) {
+        this.memo.setCurrent(newCurrent);
     }
 
-    public void prev() {
-        state.withJust(b -> {
-            this.zipListStrict.prev();
-            return null;
-        });
+    @Override
+    public boolean next() {
+        switch (this.state) {
+            case Maybe.Nothing() -> { return false; }
+            case Maybe.Just(b b) -> {
+                if (this.memo.hasNext()) return this.memo.next();
+                else {
+                    switch (this.generate.apply(b)) {
+                        case Maybe.Nothing() -> {
+                            this.state = new Maybe.Nothing<>();
+                            return false;
+                        }
+                        case Maybe.Just(T.MkT(a a, b newState)) -> {
+                            this.state = new Maybe.Just<>(newState);
+                            this.memo.insertR(a);
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public boolean prev() {
+        return switch (this.state) {
+            case Maybe.Nothing() -> false;
+            case Maybe.Just(b state) -> this.memo.prev();
+        };
+    }
+
+    @Override
+    public void show() {
+        this.memo.show();
     }
 }
