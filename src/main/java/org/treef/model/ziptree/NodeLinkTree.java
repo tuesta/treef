@@ -5,7 +5,7 @@ import org.treef.utils.adt.Maybe;
 
 import java.util.LinkedList;
 
-public class NodeLinkTree<a> implements ZipTree<a> {
+public class NodeLinkTree<a> {
     private a current;
     private Maybe<NodeLinkTree<a>> before;
     private Maybe<NodeLinkTree<a>> after;
@@ -20,96 +20,25 @@ public class NodeLinkTree<a> implements ZipTree<a> {
         this.down = down;
     }
 
-    @Override
-    public a extract() { return current; }
+    public a getCurrent() { return current; }
 
-    @Override
-    public boolean prev() {
-        switch (this.before) {
-            case Maybe.Nothing() -> { return false; }
-            case Maybe.Just(NodeLinkTree<a> beforeNode) -> {
-                NodeLinkTree<a> cNode= new NodeLinkTree<>(this.current, new Maybe.Just<>(this), this.after, this.up, this.down);
-                this.after = new Maybe.Just<>(cNode);
-                this.before = beforeNode.before;
-                this.current = beforeNode.current;
-                this.up = beforeNode.up;
-                this.down = beforeNode.down;
-                return true;
-            }
-        }
-    }
+    public void setCurrent(a current) { this.current = current; }
 
-    @Override
-    public boolean next() {
-        switch (this.after) {
-            case Maybe.Nothing() -> { return false; }
-            case Maybe.Just(NodeLinkTree<a> afterNode) -> {
-                NodeLinkTree<a> cNode= new NodeLinkTree<>(this.current, this.before,new Maybe.Just<>(this), this.up, this.down);
-                this.before = new Maybe.Just<>(cNode);
-                this.after = afterNode.after;
-                this.current = afterNode.current;
-                this.up = afterNode.up;
-                this.down = afterNode.down;
-                return true;
-            }
-        }
-    }
+    public Maybe<NodeLinkTree<a>> getBefore() { return before; }
 
-    @Override
-    public boolean top() {
-        switch (this.up) {
-            case Maybe.Nothing() -> { return false; }
-            case Maybe.Just(NodeLinkTree<a> upNode) -> {
-                NodeLinkTree<a> cNode = new NodeLinkTree<>(this.current, this.before, this.after, new Maybe.Just<>(this), this.down);
-                this.down = new Maybe.Just<>(cNode);
-                this.up = upNode.up;
-                this.before = upNode.before;
-                this.after = upNode.after;
-                this.current = upNode.current;
-                return true;
-            }
-        }
-    }
+    public void setBefore(Maybe<NodeLinkTree<a>> before) { this.before = before; }
 
-    @Override
-    public boolean down() {
-        switch (this.down) {
-            case Maybe.Nothing() -> { return false; }
-            case Maybe.Just(NodeLinkTree<a> downNode) -> {
-                NodeLinkTree<a> cNode = new NodeLinkTree<>(this.current, this.before, this.after, this.up, new Maybe.Just<>(this));
-                this.up = new Maybe.Just<>(cNode);
-                this.down = downNode.down;
-                this.before = downNode.before;
-                this.after = downNode.after;
-                this.current = downNode.current;
-                return true;
-            }
-        }
-    }
+    public Maybe<NodeLinkTree<a>> getAfter() { return after; }
 
-    public void insertR(a val) {
-        NodeLinkTree<a> cNode = new NodeLinkTree<>(this.current, this.before, new Maybe.Just<>(this), this.up, this.down);
-        this.current = val;
-        this.before = new Maybe.Just<>(cNode);
-        this.down = new Maybe.Nothing<>();
-    }
+    public void setAfter(Maybe<NodeLinkTree<a>> after) { this.after = after; }
 
-    public void insertD(a val) {
-        NodeLinkTree<a> cNode = new NodeLinkTree<>(this.current, this.before, this.after, this.up, new Maybe.Just<>(this));
-        this.current = val;
-        this.up = new Maybe.Just<>(cNode);
-        switch (this.down) {
-            case Maybe.Nothing() -> {
-                this.after = new Maybe.Nothing<>();
-                this.before= new Maybe.Nothing<>();
-            }
-            case Maybe.Just(NodeLinkTree<a> downNode) -> {
-                this.after = downNode.after;
-                downNode.after = new Maybe.Just<>(this);
-            }
-        }
-        this.down = new Maybe.Nothing<>();
-    }
+    public Maybe<NodeLinkTree<a>> getUp() { return up; }
+
+    public void setUp(Maybe<NodeLinkTree<a>> up) { this.up = up; }
+
+    public Maybe<NodeLinkTree<a>> getDown() { return down; }
+
+    public void setDown(Maybe<NodeLinkTree<a>> down) { this.down = down; }
 
     public String unlines(LinkedList<Mut<String>> xs) {
         return xs.stream()
@@ -118,9 +47,7 @@ public class NodeLinkTree<a> implements ZipTree<a> {
                 .orElse("");
     }
 
-    public String toString() {
-        return unlines(draw(this));
-    }
+    public void show() { System.out.println(unlines(draw(this))); }
 
     public LinkedList<Mut<String>> draw(NodeLinkTree<a> node) {
         return drawUp(drawBoth(new Maybe.Just<>(node), true), node.up);
@@ -133,7 +60,7 @@ public class NodeLinkTree<a> implements ZipTree<a> {
                 LinkedList<Mut<String>> level = drawLeft(upNode.before);
 
                 LinkedList<Mut<String>> current = new LinkedList<>();
-                current.add(new Mut<>(upNode.current.toString()));
+                current.add(new Mut<>(upNode.toString()));
                 current.addAll(children);
                 if (upNode.up.isJust()) {
                     if (upNode.after.isNothing()) shift(current, "`- ", "   ");
@@ -152,7 +79,7 @@ public class NodeLinkTree<a> implements ZipTree<a> {
     public LinkedList<Mut<String>> drawBoth(Maybe<NodeLinkTree<a>> mnode, boolean isCurrent) {
         LinkedList<Mut<String>> both;
         switch (mnode) {
-            case Maybe.Nothing() -> {both = new LinkedList<>(); }
+            case Maybe.Nothing() -> both = new LinkedList<>();
             case Maybe.Just(NodeLinkTree<a> node) -> {
                 both = drawLeft(node.before);
                 if (node.up.isJust()) both.add(new Mut<>("|"));
@@ -165,12 +92,12 @@ public class NodeLinkTree<a> implements ZipTree<a> {
     public LinkedList<Mut<String>> drawLeft(Maybe<NodeLinkTree<a>> mnode) {
         LinkedList<Mut<String>> left;
         switch (mnode) {
-            case Maybe.Nothing() -> { left = new LinkedList<>(); }
+            case Maybe.Nothing() -> left = new LinkedList<>();
             case Maybe.Just(NodeLinkTree<a> nodeLeft) -> {
                 left = drawLeft(nodeLeft.before);
 
                 LinkedList<Mut<String>> children = new LinkedList<>();
-                children.add(new Mut<>(nodeLeft.current.toString()));
+                children.add(new Mut<>(nodeLeft.toString()));
                 children.addAll(drawBoth(nodeLeft.down, false));
                 if (nodeLeft.up.isJust()) {
                     shift(children, "`+ ", "|  ");
@@ -186,10 +113,10 @@ public class NodeLinkTree<a> implements ZipTree<a> {
     public LinkedList<Mut<String>> drawRight(Maybe<NodeLinkTree<a>> mnode, boolean isFromBoth, boolean isCurrent) {
         LinkedList<Mut<String>> right;
         switch (mnode) {
-            case Maybe.Nothing() -> { right = new LinkedList<>(); }
+            case Maybe.Nothing() -> right = new LinkedList<>();
             case Maybe.Just(NodeLinkTree<a> nodeRight) -> {
                 LinkedList<Mut<String>> children = new LinkedList<>();
-                String currentStr = nodeRight.current.toString();
+                String currentStr = nodeRight.toString();
                 if (isCurrent) {
                     currentStr = ">>" + currentStr + "<<";
                 }

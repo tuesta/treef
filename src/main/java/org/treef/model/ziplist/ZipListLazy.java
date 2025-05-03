@@ -1,7 +1,6 @@
 package org.treef.model.ziplist;
 
 import org.treef.utils.adt.Maybe;
-import org.treef.utils.Mut;
 import org.treef.utils.adt.T;
 
 import java.util.function.Function;
@@ -25,9 +24,7 @@ public class ZipListLazy<b, a> implements ZipList<a> {
     }
 
     @Override
-    public <x> ZipList<x> empty() {
-        return new ZipListLazy<>();
-    }
+    public <x> ZipList<x> empty() { return new ZipListLazy<>(); }
 
     public Maybe<a> extract() {
         switch (this.memo.extract()) {
@@ -41,27 +38,23 @@ public class ZipListLazy<b, a> implements ZipList<a> {
     }
 
     @Override
-    public void setCurrent(a newCurrent) {
-        this.memo.setCurrent(newCurrent);
-    }
+    public void setCurrent(a newCurrent) { this.memo.setCurrent(newCurrent); }
 
     @Override
     public boolean next() {
+        if (this.memo.next()) return true;
         switch (this.state) {
             case Maybe.Nothing() -> { return false; }
             case Maybe.Just(b b) -> {
-                if (this.memo.hasNext()) return this.memo.next();
-                else {
-                    switch (this.generate.apply(b)) {
-                        case Maybe.Nothing() -> {
-                            this.state = new Maybe.Nothing<>();
-                            return false;
-                        }
-                        case Maybe.Just(T.MkT(a a, b newState)) -> {
-                            this.state = new Maybe.Just<>(newState);
-                            this.memo.insertR(a);
-                            return true;
-                        }
+                switch (this.generate.apply(b)) {
+                    case Maybe.Nothing() -> {
+                        this.state = new Maybe.Nothing<>();
+                        return false;
+                    }
+                    case Maybe.Just(T.MkT(a a, b newState)) -> {
+                        this.state = new Maybe.Just<>(newState);
+                        this.memo.insertR(a);
+                        return true;
                     }
                 }
             }
@@ -69,15 +62,8 @@ public class ZipListLazy<b, a> implements ZipList<a> {
     }
 
     @Override
-    public boolean prev() {
-        return switch (this.state) {
-            case Maybe.Nothing() -> false;
-            case Maybe.Just(b state) -> this.memo.prev();
-        };
-    }
+    public boolean prev() { return this.memo.prev(); }
 
     @Override
-    public void show() {
-        this.memo.show();
-    }
+    public void show() { this.memo.show(); }
 }

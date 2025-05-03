@@ -20,7 +20,7 @@ public class ZipListInc<a, b> {
                 return new Maybe.Just<>(new Either.Left<>(l));
             }
         }
-    };
+    }
 
     public boolean next() {
         if (this.left.next()) {
@@ -29,21 +29,16 @@ public class ZipListInc<a, b> {
         } else return false;
     }
 
-    public boolean prev() {
-        return this.left.prev() && this.right.prev();
-    }
+    public boolean prev() { return this.left.prev() && this.right.prev(); }
 
-    public boolean setCurrent(b b) {
+    public void setCurrent(b b) {
         switch (this.left.extract()) {
-            case Maybe.Nothing() -> { return false; }
-            case Maybe.Just(a v) -> {
+            case Maybe.Nothing() -> { }
+            case Maybe.Just(a ignored) -> {
                 this.left.setCurrent(null);
                 switch (this.right.extract()) {
-                    case Maybe.Nothing() -> { this.right.insertR(b); return true; }
-                    case Maybe.Just(b v1) -> {
-                        v1 = b;
-                        return true;
-                    }
+                    case Maybe.Nothing() -> this.right.insertR(b);
+                    case Maybe.Just(b v1) -> v1 = b;
                 }
             }
         }

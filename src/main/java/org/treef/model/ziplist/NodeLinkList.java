@@ -1,31 +1,53 @@
 package org.treef.model.ziplist;
 
-public class NodeLinkList<a> {
-    private ZipListStrict<a> before;
-    private a current;
-    private ZipListStrict<a> after;
+import org.treef.utils.adt.Maybe;
 
-    public NodeLinkList(ZipListStrict<a> before, a current, ZipListStrict<a> after) {
+public class NodeLinkList<a> {
+    private Maybe<NodeLinkList<a>> before;
+    private a current;
+    private Maybe<NodeLinkList<a>> after;
+
+    public NodeLinkList(Maybe<NodeLinkList<a>> before, a current, Maybe<NodeLinkList<a>> after) {
         this.before = before;
         this.current = current;
         this.after = after;
     }
-    public ZipListStrict<a> getBefore() {
-        return before;
+
+    public Maybe<NodeLinkList<a>> getBefore() { return before; }
+
+    public void setBefore(Maybe<NodeLinkList<a>> before) { this.before = before; }
+
+    public a getCurrent() { return current; }
+
+    public void setCurrent(a current) { this.current = current; }
+
+    public Maybe<NodeLinkList<a>> getAfter() { return after; }
+
+    public void setAfter(Maybe<NodeLinkList<a>> after) { this.after = after; }
+
+    public void show() {
+        switch (this.before) {
+            case Maybe.Nothing() -> System.out.print("||");
+            case Maybe.Just(NodeLinkList<a> beforeNode) -> System.out.print(beforeNode.showLeft());
+        }
+        System.out.print("@" + ">" + this + "<" + "@");
+        switch (this.after) {
+            case Maybe.Nothing() -> System.out.print("||");
+            case Maybe.Just(NodeLinkList<a> afterNode) -> System.out.println(afterNode.showRight());
+        }
     }
-    public void setBefore(ZipListStrict<a> before) {
-        this.before = before;
+
+    public String showLeft() {
+        return switch (this.before) {
+            case Maybe.Nothing() -> "||";
+            case Maybe.Just(NodeLinkList<a> beforeNode) -> beforeNode.showLeft();
+        } + "@" + this;
     }
-    public a getCurrent() {
-        return current;
-    }
-    public void setCurrent(a current) {
-        this.current = current;
-    }
-    public ZipListStrict<a> getAfter() {
-        return after;
-    }
-    public void setAfter(ZipListStrict<a> after) {
-        this.after = after;
+
+    public String showRight() {
+        return this + "@" + switch (this.after) {
+            case Maybe.Nothing() -> "||";
+            case Maybe.Just(NodeLinkList<a> afterNode) -> afterNode.showRight();
+        };
     }
 }
